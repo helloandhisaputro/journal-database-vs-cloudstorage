@@ -7,14 +7,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
-class MediaTransmisiDatabase extends TestCase
+class DownloadMediaTransmisiAWSS3 extends TestCase
 {
     /**
      * A basic feature test example.
      */
     public function test_example(): void
     {
-        $response = (new MediaTransmisiController)->runTestMediaDatabase();
+        $response = (new MediaTransmisiController)->runTestDownloadAwsS3();
 
         dd($response);
 

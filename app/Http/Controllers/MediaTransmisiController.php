@@ -9,7 +9,7 @@ use App\Models\MediaFile;
 
 class MediaTransmisiController extends Controller
 {
-    public function runTestAwsS3()
+    public function runTestDownloadAwsS3()
     {
         $startTime = microtime(true);
         $files = Storage::disk('s3')->files();
@@ -31,15 +31,15 @@ class MediaTransmisiController extends Controller
                 file_put_contents($localDirectory . basename($file), $content);
                 $totalSize += strlen($content); // ukuran file dalam byte
                 $totalPackets++;
-    
+         
                 // Simpan informasi file ke database
-                $insert = new MediaFile;
-                $insert->file_name = basename($file);
-                $insert->file_blob = $content;
-                $insert->save();
-    
-                // Log file yang berhasil diunduh dan disimpan
-                Log::info('File downloaded and saved: ' . $file);
+                if(env('APP_ENV') == 'development'){
+                    $insert = new MediaFile;
+                    $insert->file_name = basename($file);
+                    $insert->file_blob = $content;
+                    $insert->save();
+                }
+     
             } catch (\Exception $e) {
                 // Anggap exception sebagai paket yang hilang
                 $lostPackets++;
@@ -85,7 +85,6 @@ class MediaTransmisiController extends Controller
                 'mean_delay_seconds' => $meanDelay,
             ],
             'jitter' => [
-                'delays' => $delays,
                 'mean_delay_seconds' => $meanDelay,
                 'jitter_seconds' => $jitter,
             ],
@@ -100,7 +99,6 @@ class MediaTransmisiController extends Controller
         Log::info('QoS Calculation Details: ' . json_encode($qosData, JSON_PRETTY_PRINT));
     
         return response()->json([
-            'files' => $files,
             'total_size_bytes' => $totalSize,
             'download_time_seconds' => $duration,
             'throughput_bps' => $throughputBytesPerSecond * 8,
@@ -110,8 +108,7 @@ class MediaTransmisiController extends Controller
         ]);
     }
     
-
-    public function runTestMediaDatabase()
+    public function runTestMediaDownloadDatabase()
     {
         $startTime = microtime(true);
         $files = MediaFile::all();
