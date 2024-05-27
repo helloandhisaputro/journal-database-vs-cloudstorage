@@ -206,5 +206,107 @@ class MediaTransmisiController extends Controller
     
         // Mengembalikan respons JSON
         return response()->json($response);
-    }    
+    }
+    
+    public function runTestUploadAwsS3()
+    {
+        $startTime = microtime(true);
+        $localDirectory = public_path('medias/sample-upload/');
+        $bucketName = config('filesystems.disks.s3.bucket');
+        $subfolder = 'test-upload-s3/';
+    
+        $files = scandir($localDirectory);
+        $totalSize = 0;
+        $totalPackets = 0;
+        $lostPackets = 0;
+        $delays = [];
+    
+        foreach ($files as $file) {
+            if ($file == '.' || $file == '..') {
+                continue;
+            }
+    
+            $packetStartTime = microtime(true);
+            try {
+                // Upload file to S3
+                $filePath = $localDirectory . $file;
+                $s3Path = $subfolder . $file;
+    
+                // Use Laravel Storage facade to upload file to S3
+                Storage::disk('s3')->put($s3Path, file_get_contents($filePath), 'public');
+    
+                // Log file uploaded successfully
+                Log::info('File ' . $file . ' uploaded to S3 at path ' . $s3Path . ' .  local path : '.$filePath);
+    
+                $fileSize = filesize($filePath);
+                $totalSize += $fileSize; // ukuran file dalam byte
+                $totalPackets++;
+    
+            } catch (\Exception $e) {
+                // Anggap exception sebagai paket yang hilang
+                $lostPackets++;
+    
+                // Log kesalahan jika ada
+                Log::error('Error uploading file ' . $file . ' to S3: ' . $e->getMessage());
+            }
+            $packetEndTime = microtime(true);
+            $delays[] = $packetEndTime - $packetStartTime; // waktu dalam detik
+        }
+    
+        $endTime = microtime(true);
+        $duration = $endTime - $startTime; // waktu dalam detik
+    
+        // Throughput dalam bit per detik (bps)
+        $throughputBytesPerSecond = $totalSize / $duration;
+        $throughputKBytesPerSecond = $throughputBytesPerSecond / 1024;
+        $throughputKbps = $throughputBytesPerSecond * 8 / 1024;
+    
+        // Hitung Mean Delay
+        $meanDelay = array_sum($delays) / count($delays);
+    
+        // Hitung Jitter sebagai variasi standar dari delay
+        $jitter = sqrt(array_sum(array_map(function ($delay) use ($meanDelay) {
+            return pow($delay - $meanDelay, 2);
+        }, $delays)) / count($delays));
+    
+        // Hitung Packet Loss dalam persentase
+        $packetLoss = ($lostPackets / ($totalPackets + $lostPackets)) * 100;
+    
+        // Data QoS yang akan disimpan dalam log
+        $qosData = [
+            'total_size_bytes' => $totalSize,
+            'upload_time_seconds' => $duration,
+            'throughput' => [
+                'bytes_per_second' => $throughputBytesPerSecond,
+                'kbytes_per_second' => $throughputKBytesPerSecond,
+                'kbps' => $throughputKbps,
+            ],
+            'delay' => [
+                'total_files' => $totalPackets,
+                'total_time_seconds' => $duration,
+                'mean_delay_seconds' => $meanDelay,
+            ],
+            'jitter' => [
+                'mean_delay_seconds' => $meanDelay,
+                'jitter_seconds' => $jitter,
+            ],
+            'packet_loss' => [
+                'total_files' => $totalPackets,
+                'lost_files' => $lostPackets,
+                'packet_loss_percentage' => $packetLoss,
+            ],
+        ];
+    
+        // Log detail perhitungan dengan format beautify JSON
+        Log::info('QoS Calculation Details (Upload to S3): ' . json_encode($qosData, JSON_PRETTY_PRINT));
+    
+        return response()->json([
+            'total_size_bytes' => $totalSize,
+            'upload_time_seconds' => $duration,
+            'throughput_bps' => $throughputBytesPerSecond * 8,
+            'mean_delay_seconds' => $meanDelay,
+            'jitter_seconds' => $jitter,
+            'packet_loss_percentage' => $packetLoss,
+        ]);
+    }
 }
