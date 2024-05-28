@@ -8,6 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class UploadTestMediaFile extends Model
 {
     use HasFactory;
-    protected $table = 'media_files';
+    protected $table = 'upload_test_media_files';
     protected $fillable = ['file_name','file_blob'];
 }

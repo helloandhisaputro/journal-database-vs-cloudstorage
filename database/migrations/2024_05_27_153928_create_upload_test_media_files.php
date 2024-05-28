@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -11,12 +12,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('upload_test_media_files', function (Blueprint $table) {
-            $table->id();
-            $table->text('file_name');
-            $table->binary('file_blob');
-            $table->timestamps();
-        });
+        DB::statement("
+            CREATE TABLE `upload_test_media_files` (
+                `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                `file_name` text NOT NULL,
+                `file_blob` longblob NOT NULL,
+                `created_at` timestamp NULL DEFAULT NULL,
+                `updated_at` timestamp NULL DEFAULT NULL
+            )
+        ");
     }
 
     /**

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use App\Models\MediaFile;
+use App\Models\UploadTestMediaFile;
 
 class MediaTransmisiController extends Controller
 {
@@ -96,8 +97,8 @@ class MediaTransmisiController extends Controller
         ];
     
         // Log detail perhitungan dengan format beautify JSON
-        Log::info('QoS Calculation Details: ' . json_encode($qosData, JSON_PRETTY_PRINT));
-    
+        Log::channel('qos_log')->info('QoS Calculation Details: ' . json_encode($qosData, JSON_PRETTY_PRINT));
+
         return response()->json([
             'total_size_bytes' => $totalSize,
             'download_time_seconds' => $duration,
@@ -192,7 +193,7 @@ class MediaTransmisiController extends Controller
         ];
     
         // Log detail perhitungan dengan format beautify JSON
-        Log::info('QoS Calculation Details: ' . json_encode($qosData, JSON_PRETTY_PRINT));
+        Log::channel('qos_log')->info('QoS Calculation Details: ' . json_encode($qosData, JSON_PRETTY_PRINT));
     
         // Menyiapkan respons JSON
         $response = [
@@ -235,7 +236,7 @@ class MediaTransmisiController extends Controller
                 Storage::disk('s3')->put($s3Path, file_get_contents($filePath));
     
                 // Log file uploaded successfully
-                Log::info('File ' . $file . ' uploaded to S3 at path ' . $s3Path . ' .  local path : '.$filePath);
+                // Log::info('File ' . $file . ' uploaded to S3 at path ' . $s3Path . ' .  local path : '.$filePath);
     
                 $fileSize = filesize($filePath);
                 $totalSize += $fileSize; // ukuran file dalam byte
@@ -297,7 +298,7 @@ class MediaTransmisiController extends Controller
         ];
     
         // Log detail perhitungan dengan format beautify JSON
-        Log::info('QoS Calculation Details (Upload to S3): ' . json_encode($qosData, JSON_PRETTY_PRINT));
+        Log::channel('qos_log')->info('QoS Calculation Details (Upload to S3): ' . json_encode($qosData, JSON_PRETTY_PRINT));
     
         return response()->json([
             'total_size_bytes' => $totalSize,
@@ -308,4 +309,108 @@ class MediaTransmisiController extends Controller
             'packet_loss_percentage' => $packetLoss,
         ]);
     }
+
+    public function runTestUploadDatabase()
+    {
+        $startTime = microtime(true);
+        $localDirectory = public_path('medias/sample-upload/');
+    
+        $files = scandir($localDirectory);
+        $totalSize = 0;
+        $totalPackets = 0;
+        $lostPackets = 0;
+        $delays = [];
+    
+        foreach ($files as $file) {
+            if ($file == '.' || $file == '..') {
+                continue;
+            }
+    
+            $packetStartTime = microtime(true);
+            try {
+                $filePath = $localDirectory . $file;
+                $fileContent = file_get_contents($filePath);
+    
+                // Insert file ke UploadTestMediaFile dengan value file_name dan file_blob
+                $uploadFile = new UploadTestMediaFile;
+                $uploadFile->file_name = $file;
+                $uploadFile->file_blob = $fileContent;
+                $uploadFile->save();
+    
+                // Hitung ukuran total file yang diunggah
+                $fileSize = filesize($filePath);
+                $totalSize += $fileSize; // ukuran file dalam byte
+                $totalPackets++;
+                
+                // Log file yang berhasil diunggah
+                Log::info('File successfully uploaded to database: ' . $file);
+    
+            } catch (\Exception $e) {
+                // Anggap exception sebagai paket yang hilang
+                $lostPackets++;
+    
+                // Log kesalahan jika ada
+                Log::error('Error uploading file ' . $file . ' to database: ' . $e->getMessage());
+            }
+            $packetEndTime = microtime(true);
+            $delays[] = $packetEndTime - $packetStartTime; // waktu dalam detik
+        }
+    
+        $endTime = microtime(true);
+        $duration = $endTime - $startTime; // waktu dalam detik
+    
+        // Throughput dalam bit per detik (bps)
+        $throughputBytesPerSecond = $totalSize / $duration;
+        $throughputKBytesPerSecond = $throughputBytesPerSecond / 1024;
+        $throughputKbps = $throughputBytesPerSecond * 8 / 1024;
+    
+        // Hitung Mean Delay
+        $meanDelay = array_sum($delays) / count($delays);
+    
+        // Hitung Jitter sebagai variasi standar dari delay
+        $jitter = sqrt(array_sum(array_map(function ($delay) use ($meanDelay) {
+            return pow($delay - $meanDelay, 2);
+        }, $delays)) / count($delays));
+    
+        // Hitung Packet Loss dalam persentase
+        $packetLoss = ($lostPackets / ($totalPackets + $lostPackets)) * 100;
+    
+        // Data QoS yang akan disimpan dalam log
+        $qosData = [
+            'total_size_bytes' => $totalSize,
+            'upload_time_seconds' => $duration,
+            'throughput' => [
+                'bytes_per_second' => $throughputBytesPerSecond,
+                'kbytes_per_second' => $throughputKBytesPerSecond,
+                'kbps' => $throughputKbps,
+            ],
+            'delay' => [
+                'total_files' => $totalPackets,
+                'total_time_seconds' => $duration,
+                'mean_delay_seconds' => $meanDelay,
+            ],
+            'jitter' => [
+                'mean_delay_seconds' => $meanDelay,
+                'jitter_seconds' => $jitter,
+            ],
+            'packet_loss' => [
+                'total_files' => $totalPackets,
+                'lost_files' => $lostPackets,
+                'packet_loss_percentage' => $packetLoss,
+            ],
+        ];
+    
+        // Log detail perhitungan dengan format beautify JSON
+        Log::channel('qos_log')->info('QoS Calculation Details (Upload to Database): ' . json_encode($qosData, JSON_PRETTY_PRINT));
+    
+        return response()->json([
+            'total_size_bytes' => $totalSize,
+            'upload_time_seconds' => $duration,
+            'throughput_bps' => $throughputBytesPerSecond * 8,
+            'mean_delay_seconds' => $meanDelay,
+            'jitter_seconds' => $jitter,
+            'packet_loss_percentage' => $packetLoss,
+        ]);
+    }
+    
 }
