@@ -34,7 +34,7 @@ class MediaTransmisiController extends Controller
                 $totalPackets++;
          
                 // Simpan informasi file ke database
-                if(env('APP_ENV') == 'development'){
+                if(env('MAKE_SAMPLE') == true){
                     $insert = new MediaFile;
                     $insert->file_name = basename($file);
                     $insert->file_blob = $content;
