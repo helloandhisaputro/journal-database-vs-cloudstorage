@@ -212,7 +212,6 @@ class MediaTransmisiController extends Controller
     {
         $startTime = microtime(true);
         $localDirectory = public_path('medias/sample-upload/');
-        $bucketName = config('filesystems.disks.s3.bucket');
         $subfolder = 'test-upload-s3/';
     
         $files = scandir($localDirectory);
@@ -231,9 +230,9 @@ class MediaTransmisiController extends Controller
                 // Upload file to S3
                 $filePath = $localDirectory . $file;
                 $s3Path = $subfolder . $file;
-    
+                 
                 // Use Laravel Storage facade to upload file to S3
-                Storage::disk('s3')->put($s3Path, file_get_contents($filePath), 'public');
+                Storage::disk('s3')->put($s3Path, file_get_contents($filePath));
     
                 // Log file uploaded successfully
                 Log::info('File ' . $file . ' uploaded to S3 at path ' . $s3Path . ' .  local path : '.$filePath);
