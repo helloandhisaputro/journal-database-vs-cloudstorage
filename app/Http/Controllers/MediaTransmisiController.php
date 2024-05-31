@@ -193,7 +193,7 @@ class MediaTransmisiController extends Controller
         ];
     
         // Log detail perhitungan dengan format beautify JSON
-        Log::channel('qos_log')->info('QoS Calculation Details: (Upload to Database)' . json_encode($qosData, JSON_PRETTY_PRINT));
+        Log::channel('qos_log')->info('QoS Calculation Details: (Download to Database)' . json_encode($qosData, JSON_PRETTY_PRINT));
     
         // Menyiapkan respons JSON
         $response = [

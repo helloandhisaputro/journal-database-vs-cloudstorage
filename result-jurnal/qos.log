@@ -1,0 +1,92 @@
+[2024-05-28 16:49:53] testing.INFO: QoS Calculation Details: (Download to S3){
+    "total_size_bytes": 132269960,
+    "download_time_seconds": 14.714916944503784,
+    "throughput": {
+        "bytes_per_second": 8988834.969225196,
+        "kbytes_per_second": 8778.15914963398,
+        "kbps": 70225.27319707185
+    },
+    "delay": {
+        "total_packets": 194,
+        "total_time_seconds": 14.714916944503784,
+        "mean_delay_seconds": 0.07509777840879775
+    },
+    "jitter": {
+        "mean_delay_seconds": 0.07509777840879775,
+        "jitter_seconds": 0.05012071406545077
+    },
+    "packet_loss": {
+        "total_packets": 194,
+        "lost_packets": 0,
+        "packet_loss_percentage": 0
+    }
+}  
+[2024-05-28 16:57:04] testing.INFO: QoS Calculation Details: (Download to Database){
+    "total_size_bytes": 132269960,
+    "download_time_seconds": 0.7200791835784912,
+    "throughput": {
+        "bytes_per_second": 183688076.27888066,
+        "kbytes_per_second": 179382.8869910944,
+        "kbps": 1435063.0959287551
+    },
+    "delay": {
+        "total_packets": 194,
+        "total_time_seconds": 0.7200791835784912,
+        "mean_delay_seconds": 0.001116312656205954
+    },
+    "jitter": {
+        "mean_delay_seconds": 0.001116312656205954,
+        "jitter_seconds": 0.0011465664817246638
+    },
+    "packet_loss": {
+        "total_packets": 194,
+        "lost_packets": 0,
+        "packet_loss_percentage": 0
+    }
+}  
+[2024-05-28 17:04:45] testing.INFO: QoS Calculation Details (Upload to S3): {
+    "total_size_bytes": 132269960,
+    "upload_time_seconds": 13.503131866455078,
+    "throughput": {
+        "bytes_per_second": 9795502.355167646,
+        "kbytes_per_second": 9565.920268718404,
+        "kbps": 76527.36214974723
+    },
+    "delay": {
+        "total_files": 194,
+        "total_time_seconds": 13.503131866455078,
+        "mean_delay_seconds": 0.0696003092932947
+    },
+    "jitter": {
+        "mean_delay_seconds": 0.0696003092932947,
+        "jitter_seconds": 0.02744655414366924
+    },
+    "packet_loss": {
+        "total_files": 194,
+        "lost_files": 0,
+        "packet_loss_percentage": 0
+    }
+}  
+[2024-05-28 17:12:54] testing.INFO: QoS Calculation Details (Upload to Database): {
+    "total_size_bytes": 132269960,
+    "upload_time_seconds": 11.886030912399292,
+    "throughput": {
+        "bytes_per_second": 11128185.764855985,
+        "kbytes_per_second": 10867.368910992172,
+        "kbps": 86938.95128793738
+    },
+    "delay": {
+        "total_files": 194,
+        "total_time_seconds": 11.886030912399292,
+        "mean_delay_seconds": 0.06126458005806834
+    },
+    "jitter": {
+        "mean_delay_seconds": 0.06126458005806834,
+        "jitter_seconds": 0.0844834391821093
+    },
+    "packet_loss": {
+        "total_files": 194,
+        "lost_files": 0,
+        "packet_loss_percentage": 0
+    }
+}  
